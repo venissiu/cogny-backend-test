@@ -1,4 +1,4 @@
-const { DATABASE_SCHEMA, DATABASE_URL, SHOW_PG_MONITOR } = require('./config');
+const { DATABASE_SCHEMA, DATABASE_URL, SHOW_PG_MONITOR,START_DATE,FINAL_DATE } = require('./config');
 const massive = require('massive');
 const monitor = require('pg-monitor');
 const axios = require('axios');
@@ -67,13 +67,22 @@ const axios = require('axios');
         const apiLink = 'https://datausa.io/api/data?drilldowns=Nation&measures=Population'
             try {
               const responseFromApi = await axios.get(apiLink);
-              console.log(responseFromApi.data.data);
               return responseFromApi.data.data
             } catch (error) {
               console.error(error.message);
             }
           }
 
+    const sumPopulationLocally = async function () {
+        const dataFromApi = await fetchDataFromApi()
+        const populationSum = dataFromApi
+        .filter((element) => element.Year >= START_DATE && element.Year <= FINAL_DATE)
+        .reduce(
+            (previous, currentValue) => previous + currentValue.Population, 0
+        );
+        return populationSum;
+    }
+          
     try {
         await migrationUp();
         const fetchedDataFromApi = await fetchDataFromApi();
@@ -88,12 +97,8 @@ const axios = require('axios');
         })
         const result1 = await db[DATABASE_SCHEMA].api_data.insert(processedDataToInsertIntoDB)
         console.log('result1 >>>', result1);
-
-         //exemplo select
-        const result2 = await db[DATABASE_SCHEMA].api_data.find({
-            is_active: true
-        });
-        console.log('result2 >>>', result2);
+        const result2 = await sumPopulationLocally()
+        console.log('Population sum made locally >>>', result2.toLocaleString('pt-BR'));
     } catch (e) {
         console.log(e.message)
     } finally {
