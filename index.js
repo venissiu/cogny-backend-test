@@ -84,9 +84,8 @@ const axios = require("axios");
     }
   };
 
-  const sumPopulationLocally = async function () {
-    const dataFromApi = await fetchDataFromApi();
-    const populationSum = dataFromApi
+  const sumPopulationLocally = async function (dataToProcess) {
+    const populationSum = dataToProcess
       .filter(
         (element) => element.Year >= START_DATE && element.Year <= FINAL_DATE
       )
@@ -117,8 +116,10 @@ const axios = require("axios");
         };
       }
     );
+    
+    await db[DATABASE_SCHEMA].api_data.destroy({});
     await db[DATABASE_SCHEMA].api_data.insert(processedDataToInsertIntoDB);
-    const result2 = await sumPopulationLocally();
+    const result2 = await sumPopulationLocally(fetchedDataFromApi);
 
 
     console.log(
