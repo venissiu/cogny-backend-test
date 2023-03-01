@@ -66,8 +66,9 @@ const axios = require('axios');
     const fetchDataFromApi = async function () {
         const apiLink = 'https://datausa.io/api/data?drilldowns=Nation&measures=Population'
             try {
-              const { data } = await axios.get(apiLink);
-              return data
+              const responseFromApi = await axios.get(apiLink);
+              console.log(responseFromApi.data.data);
+              return responseFromApi.data.data
             } catch (error) {
               console.error(error.message);
             }
@@ -77,9 +78,15 @@ const axios = require('axios');
         await migrationUp();
         const fetchedDataFromApi = await fetchDataFromApi();
         //insere os dados vindos da api na tabela doc_record do banco
-        const result1 = await db[DATABASE_SCHEMA].api_data.insert({
-            doc_record: fetchedDataFromApi ,
+        const processedDataToInsertIntoDB = fetchedDataFromApi.map(arrayElement => {
+        return { 
+            api_name: 'datausa',
+            doc_name: arrayElement['Nation'],
+            doc_id: arrayElement['ID Nation'],
+            doc_record: arrayElement,
+            }
         })
+        const result1 = await db[DATABASE_SCHEMA].api_data.insert(processedDataToInsertIntoDB)
         console.log('result1 >>>', result1);
 
          //exemplo select
