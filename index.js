@@ -1,6 +1,7 @@
 const { DATABASE_SCHEMA, DATABASE_URL, SHOW_PG_MONITOR } = require('./config');
 const massive = require('massive');
 const monitor = require('pg-monitor');
+const axios = require('axios');
 
 // Call start
 (async () => {
@@ -62,21 +63,30 @@ const monitor = require('pg-monitor');
         });
     };
 
+    const fetchDataFromApi = async function () {
+        const apiLink = 'https://datausa.io/api/data?drilldowns=Nation&measures=Population'
+            try {
+              const { data } = await axios.get(apiLink);
+              return data
+            } catch (error) {
+              console.error(error.message);
+            }
+          }
+
     try {
         await migrationUp();
-
-        //exemplo de insert
+        const fetchedDataFromApi = await fetchDataFromApi();
+        //insere os dados vindos da api na tabela doc_record do banco
         const result1 = await db[DATABASE_SCHEMA].api_data.insert({
-            doc_record: { 'a': 'b' },
+            doc_record: fetchedDataFromApi ,
         })
         console.log('result1 >>>', result1);
 
-        //exemplo select
+         //exemplo select
         const result2 = await db[DATABASE_SCHEMA].api_data.find({
             is_active: true
         });
         console.log('result2 >>>', result2);
-
     } catch (e) {
         console.log(e.message)
     } finally {
