@@ -98,11 +98,13 @@ const axios = require("axios");
 
   try {
     await migrationUp();
-    const queryToSumPopulationFromDB = `
+    const queryToSumPopulationFromDB =`
         SELECT SUM((doc_record->>'Population')::int) as population_sum
-        FROM ${DATABASE_SCHEMA}.api_data
+        FROM venissiu.api_data
         WHERE 
-        (doc_record ->> 'Year')::int BETWEEN ${START_DATE} AND ${FINAL_DATE}`;
+        (doc_record ->> 'Year')::int BETWEEN $1 AND $2`
+      ;
+    const valuesQuery = [START_DATE, FINAL_DATE]
 
     const fetchedDataFromApi = await fetchDataFromApi();
 
@@ -128,7 +130,7 @@ const axios = require("axios");
     );
 
 
-    const resultFromQuery = await db.query(queryToSumPopulationFromDB);
+    const resultFromQuery = await db.query(queryToSumPopulationFromDB, valuesQuery);
 
     const resultInCorrectShape = parseInt(resultFromQuery[0].population_sum);
 
@@ -137,6 +139,7 @@ const axios = require("axios");
       "Population sum made by query to database:",
       resultInCorrectShape.toLocaleString("pt-BR"),
     );
+
   } catch (e) {
     console.log(e.message);
   } finally {
